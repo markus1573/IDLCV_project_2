@@ -7,35 +7,84 @@ import torchvision.models as tv_models
 
 
 class single_frame_model(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=10):
         super().__init__()
         # resnet18
-        self.model = tv_models.resnet18()
-        self.model.fc = nn.Linear(self.model.fc.in_features, 10)
+        self.model = tv_models.resnet18(num_classes=num_classes)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
+        assert len(x.shape) == 4, "x must be a 4D tensor: [batch, channels, height, width]"
         return self.model(x)
 
 class early_fusion_model(nn.Module):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, num_frames=10, num_classes=10):
+        super().__init__() 
         
-    def forward(self, x):
-        return
+        # Create ResNet18
+        self.model = tv_models.resnet18(num_classes=num_classes)
+        
+        # Replace first conv to accept C*T channels 
+        self.model.conv1 = nn.Conv2d(
+            in_channels=3 * num_frames,
+            out_channels=64,             #
+            kernel_size=7,               # 
+            stride=2,                    # Copied from resnet18.
+            padding=3,                   #
+            bias=False                   #
+        )
+        
+    def forward(self, x: torch.Tensor):
+        assert len(x.shape) == 5, "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+        
+        B, C, T, H, W = x.shape
+        x = x.reshape(B, C*T, H, W)  # [batch, channels*num_frames, height, width]
+        return self.model(x)
 
-class late_fusion_model(nn.Module):
-    def __init__(self):
-        super().__init__()
         
-    def forward(self, x):
-        return
+class late_fusion_model(nn.Module):
+    def __init__(self, num_frames=10, num_classes=10):
+        super().__init__()
+        self.model = tv_models.resnet18(num_classes=num_classes)
+        
+        # Get feature dimension before removing fc
+        feature_dim = self.model.fc.in_features  # 512 for ResNet18
+        
+        # Remove fc layer - use Identity instead of None
+        self.model.fc = nn.Identity()
+        
+        # New classifier that takes concatenated features
+        self.fc = nn.Linear(feature_dim * num_frames, num_classes)
+        
+    def forward(self, x: torch.Tensor):
+        # x shape: [batch, channels, num_frames, height, width]
+        assert len(x.shape) == 5, "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+        
+        B, C, T, H, W = x.shape
+        
+        # Process each frame independently
+        outputs = []
+        for i in range(T):
+            frame = x[:, :, i, :, :]  # [B, C, H, W]
+            feat = self.model(frame)   
+            outputs.append(feat)
+        
+        # Concatenate all features
+        fused = torch.cat(outputs, dim=1)
+        
+        # Final classification
+        out = self.fc(fused)  # [B, num_classes]
+        
+        return out
 
 class CNN3D(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes = 10):
         super().__init__()
+        self.model = tv_models.video.r3d_18(num_classes=num_classes)
         
     def forward(self, x):
-        return
+        assert len(x.shape) == 5, "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+        out = self.model(x)
+        return out
 
 class C3D(nn.Module):
     def __init__(self):
