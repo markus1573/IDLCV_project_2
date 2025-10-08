@@ -1,0 +1,53 @@
+# Configuration file for Action Recognition Training
+
+# Data Configuration
+data:
+  root_dir: "data/ufc10"
+  dataset_type: "frame_video"  # Options: "frame_image", "frame_video"
+  batch_size: 16
+  num_workers: 4
+  image_size: [112, 112]  # [height, width]
+  n_sampled_frames: 10
+  stack_frames: true
+  augment: true
+
+# Model Configuration
+model:
+  model_type: "cnn3d"  # Options: "simple_cnn", "cnn3d", "cnn_lstm"
+  num_classes: 10
+  dropout: 0.5
+  hidden_size: 256  # For LSTM models
+  num_layers: 2     # For LSTM models
+
+# Training Configuration
+training:
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  max_epochs: 100
+  accelerator: "auto"  # Options: "auto", "gpu", "cpu", "mps"
+  devices: 1
+  precision: "32"  # Options: "16", "32", "bf16"
+  patience: 10  # For early stopping
+
+# Logging and Checkpoints
+logging:
+  experiment_name: "action_recognition"
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  
+# Reproducibility
+seed: 42
+
+# Action Classes (for reference)
+classes:
+  0: "BodyWeightSquats"
+  1: "HandstandPushups"
+  2: "HandstandWalking"
+  3: "JumpingJack"
+  4: "JumpRope"
+  5: "Lunges"
+  6: "PullUps"
+  7: "PushUps"
+  8: "TrampolineJumping"
+  9: "WallPushups"
+
