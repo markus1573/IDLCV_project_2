@@ -3,7 +3,7 @@
 # Data Configuration
 data:
   root_dir: "data/ufc10"
-  dataset_type: "frame_video"  # Options: "frame_image", "frame_video"
+  dataset_type: "frame_image"  # Options: "frame_image", "frame_video"
   batch_size: 16
   num_workers: 4
   image_size: [112, 112]  # [height, width]

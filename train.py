@@ -39,7 +39,7 @@ def _validate_dataset_model_compatibility(dataset_type: str, model_type: str) ->
 def main(cfg: DictConfig) -> None:
     """Train Action Recognition Model with Hydra configuration."""
 
-    print(f"\nLoaded configuration from {cfg._config_path}")
+    print(f"\nLoaded configuration from conf/config.yaml")
 
     # Validate dataset-model compatibility
     _validate_dataset_model_compatibility(cfg.data.dataset_type, cfg.model.model_type)
