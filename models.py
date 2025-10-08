@@ -5,6 +5,44 @@ import torchmetrics
 from typing import Optional
 
 
+class aggregation_model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+        return
+
+class early_fusion_model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+        return
+
+class late_fusion_model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+        return
+
+class CNN3D(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+        return
+
+class C3D(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x):
+        return
+
+
+
+
 class ActionRecognitionModel(pl.LightningModule):
     """
     TODO
@@ -12,7 +50,7 @@ class ActionRecognitionModel(pl.LightningModule):
     
     def __init__(
         self,
-        model_type: str = "",
+        model_type: str,
         num_classes: int = 10,
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
@@ -23,12 +61,26 @@ class ActionRecognitionModel(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         
-        
+        self.model = self.get_model()
+
+    def get_model(self):
+        if self.hparams['model_type'] == "aggregation":
+            return aggregation_model()
+        elif self.hparams['model_type'] == "early_fusion":
+            return early_fusion_model()
+        elif self.hparams['model_type'] == "late_fusion":
+            return late_fusion_model()
+        elif self.hparams['model_type'] == "CNN3D":
+            return CNN3D()
+        elif self.hparams['model_type'] == "C3D":
+            return C3D()
+        else:
+            raise ValueError(f"Unknown model_type: {self.hparams['model_type']}")
+
     def forward(self, x):
         return self.model(x)
     
     def training_step(self, batch, batch_idx):
-        
         
         return
     
