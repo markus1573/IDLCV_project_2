@@ -105,6 +105,7 @@ class ActionRecognitionModel(pl.LightningModule):
         self,
         model_type: str,
         num_classes: int = 10,
+        num_frames: int = 10,
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
         dropout: float = 0.5,
@@ -117,14 +118,14 @@ class ActionRecognitionModel(pl.LightningModule):
         self.model = self.get_model()
 
     def get_model(self):
-        if self.hparams['model_type'] == "aggregation":
-            return single_frame_model()
+        if self.hparams['model_type'] == "single_frame":
+            return single_frame_model(num_classes=self.hparams['num_classes'])
         elif self.hparams['model_type'] == "early_fusion":
-            return early_fusion_model()
+            return early_fusion_model(num_classes=self.hparams['num_classes'], num_frames=self.hparams['num_frames'])
         elif self.hparams['model_type'] == "late_fusion":
-            return late_fusion_model()
+            return late_fusion_model(num_classes=self.hparams['num_classes'], num_frames=self.hparams['num_frames'])
         elif self.hparams['model_type'] == "CNN3D":
-            return CNN3D()
+            return CNN3D(num_classes=self.hparams['num_classes'])
         elif self.hparams['model_type'] == "C3D":
             return C3D()
         else:
@@ -165,3 +166,25 @@ class ActionRecognitionModel(pl.LightningModule):
             }
         }
 
+
+# create main function to test all models
+def main():
+    for model_type in ["single_frame", "early_fusion", "late_fusion", "CNN3D"]:
+        model = ActionRecognitionModel(
+            model_type=model_type,
+            num_classes=10,
+            num_frames=10,
+        )
+        if model_type == "single_frame":
+            x = torch.randn(1, 3, 112, 112)
+        elif model_type == "early_fusion":
+            x = torch.randn(1, 3, 10, 112, 112)
+        elif model_type == "late_fusion":
+            x = torch.randn(1, 3, 10, 112, 112)
+        elif model_type == "CNN3D":
+            x = torch.randn(1, 3, 10, 112, 112)
+        model.forward(x)
+        print(model.forward(x).shape)
+
+if __name__ == "__main__":
+    main()
