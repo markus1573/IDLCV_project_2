@@ -1,0 +1,19 @@
+# @package _global_
+
+# Override default config for CNN3D experiments
+defaults:
+  - config
+
+model:
+  model_type: CNN3D
+
+data:
+  dataset_type: frame_video
+  batch_size: 8
+  n_sampled_frames: 16
+
+training:
+  max_epochs: 50
+
+logging:
+  experiment_name: cnn3d_experiment

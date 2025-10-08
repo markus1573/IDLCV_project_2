@@ -1,0 +1,18 @@
+# @package _global_
+
+# Override default config for early fusion model experiments
+defaults:
+  - config
+
+model:
+  model_type: early_fusion_model
+
+data:
+  dataset_type: frame_image
+  batch_size: 32
+
+training:
+  max_epochs: 30
+
+logging:
+  experiment_name: early_fusion_experiment

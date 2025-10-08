@@ -1,0 +1,41 @@
+name: idlcv_project2
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python
+  - python=3.12
+
+  # Core ML packages
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pytorch-cuda=12.4  # or cpu version if no GPU
+  - pytorch-lightning>=2.0.0
+  - torchmetrics>=1.0.0
+
+  # Configuration management
+  - hydra-core>=1.3.0
+  - omegaconf>=2.3.0
+
+  # Data processing
+  - pandas>=2.0.0
+  - numpy>=1.24.0
+  - pillow>=10.0.0
+  - opencv>=4.8.0
+
+  # Utilities
+  - pyyaml>=6.0
+  - tqdm>=4.65.0
+  - glob2>=0.7  # for glob functionality
+
+  # Development tools (optional)
+  - jupyter>=1.0.0
+  - ipython>=8.0.0
+  - matplotlib>=3.7.0
+
+  # Pip packages (for packages not available in conda)
+  - pip
+  - pip:
+    - rich>=13.0.0  # for RichProgressBar

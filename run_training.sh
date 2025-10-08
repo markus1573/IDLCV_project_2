@@ -6,9 +6,8 @@
 echo "Starting Action Recognition Training..."
 echo "========================================"
 
-# Train with config file
-python train_from_config.py \
-    --config config.yaml
+# Train with default config
+python train.py
 
 echo ""
 echo "Training completed!"

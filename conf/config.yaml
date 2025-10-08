@@ -13,11 +13,9 @@ data:
 
 # Model Configuration
 model:
-  model_type: "cnn3d"  # Options: "simple_cnn", "cnn3d", "cnn_lstm"
+  model_type: "single_frame_model"  # Options: "single_frame_model", "early_fusion_model", "late_fusion_model", "CNN3D", "C3D"
   num_classes: 10
   dropout: 0.5
-  hidden_size: 256  # For LSTM models
-  num_layers: 2     # For LSTM models
 
 # Training Configuration
 training:
@@ -39,15 +37,15 @@ logging:
 seed: 42
 
 # Action Classes (for reference)
-classes:
-  0: "BodyWeightSquats"
-  1: "HandstandPushups"
-  2: "HandstandWalking"
-  3: "JumpingJack"
-  4: "JumpRope"
-  5: "Lunges"
-  6: "PullUps"
-  7: "PushUps"
-  8: "TrampolineJumping"
-  9: "WallPushups"
+# classes:
+#   0: "BodyWeightSquats"
+#   1: "HandstandPushups"
+#   2: "HandstandWalking"
+#   3: "JumpingJack"
+#   4: "JumpRope"
+#   5: "Lunges"
+#   6: "PullUps"
+#   7: "PushUps"
+#   8: "TrampolineJumping"
+  # 9: "WallPushups"
 
