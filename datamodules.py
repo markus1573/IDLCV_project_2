@@ -145,3 +145,105 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
             persistent_workers=True if self.num_workers > 0 else False,
         )
 
+
+if __name__ == '__main__':
+    """Test the DataModule to ensure it works correctly."""
+    
+    print("="*60)
+    print("Testing ActionRecognitionDataModule")
+    print("="*60)
+    
+    # Test with frame_video dataset (default)
+    print("\n1. Testing with frame_video dataset (default)")
+    print("-"*60)
+    
+    datamodule = ActionRecognitionDataModule(
+        root_dir='data/ufc10',
+        dataset_type='frame_video',
+        batch_size=4,
+        num_workers=2,
+        image_size=(112, 112),
+        n_sampled_frames=10,
+        stack_frames=True,
+        augment=True,
+    )
+    
+    # Setup the datamodule
+    print("Setting up datamodule...")
+    datamodule.setup()
+    
+    # Test train dataloader
+    print("\nTesting train dataloader...")
+    train_loader = datamodule.train_dataloader()
+    train_batch = next(iter(train_loader))
+    frames, labels = train_batch
+    print(f"  Train batch shapes:")
+    print(f"    Frames: {frames.shape}")  # Expected: (batch, channels, time, height, width)
+    print(f"    Labels: {labels.shape}")  # Expected: (batch,)
+    print(f"    Frames dtype: {frames.dtype}")
+    print(f"    Labels dtype: {labels.dtype}")
+    print(f"    Frames min/max: {frames.min():.3f} / {frames.max():.3f}")
+    print(f"    Unique labels: {labels.unique().tolist()}")
+    
+    # Test val dataloader
+    print("\nTesting val dataloader...")
+    val_loader = datamodule.val_dataloader()
+    val_batch = next(iter(val_loader))
+    frames, labels = val_batch
+    print(f"  Val batch shapes:")
+    print(f"    Frames: {frames.shape}")
+    print(f"    Labels: {labels.shape}")
+    
+    # Test test dataloader
+    print("\nTesting test dataloader...")
+    test_loader = datamodule.test_dataloader()
+    test_batch = next(iter(test_loader))
+    frames, labels = test_batch
+    print(f"  Test batch shapes:")
+    print(f"    Frames: {frames.shape}")
+    print(f"    Labels: {labels.shape}")
+    
+    # Print dataset sizes
+    print("\nDataset sizes:")
+    print(f"  Train: {len(datamodule.train_dataset)} videos")
+    print(f"  Val:   {len(datamodule.val_dataset)} videos")
+    print(f"  Test:  {len(datamodule.test_dataset)} videos")
+    
+    # Test with frame_image dataset
+    print("\n" + "="*60)
+    print("2. Testing with frame_image dataset")
+    print("-"*60)
+    
+    datamodule_image = ActionRecognitionDataModule(
+        root_dir='data/ufc10',
+        dataset_type='frame_image',
+        batch_size=8,
+        num_workers=2,
+        image_size=(112, 112),
+        augment=False,
+    )
+    
+    datamodule_image.setup()
+    
+    # Test train dataloader
+    print("\nTesting train dataloader...")
+    train_loader_image = datamodule_image.train_dataloader()
+    train_batch_image = next(iter(train_loader_image))
+    images, labels = train_batch_image
+    print(f"  Train batch shapes:")
+    print(f"    Images: {images.shape}")  # Expected: (batch, channels, height, width)
+    print(f"    Labels: {labels.shape}")  # Expected: (batch,)
+    
+    # Print dataset sizes
+    print("\nDataset sizes:")
+    print(f"  Train: {len(datamodule_image.train_dataset)} frames")
+    print(f"  Val:   {len(datamodule_image.val_dataset)} frames")
+    print(f"  Test:  {len(datamodule_image.test_dataset)} frames")
+    
+    print("\n" + "="*60)
+    print("✓ DataModule test completed successfully!")
+    print("="*60)
+    print("\nYou can now use this DataModule for training with:")
+    print("  python train.py --dataset_type frame_video")
+    print("  python train.py --dataset_type frame_image")
+    print("="*60)
