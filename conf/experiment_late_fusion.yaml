@@ -8,7 +8,7 @@ model:
   model_type: late_fusion
 
 data:
-  dataset_type: frame_image
+  dataset_type: frame_video
   batch_size: 32
 
 training:

@@ -97,14 +97,6 @@ class CNN3D(nn.Module):
         return out
 
 
-class C3D(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return
-
-
 class ActionRecognitionModel(pl.LightningModule):
     """
     TODO
@@ -140,8 +132,6 @@ class ActionRecognitionModel(pl.LightningModule):
             )
         elif self.hparams["model_type"] == "CNN3D":
             return CNN3D(num_classes=self.hparams["num_classes"])
-        elif self.hparams["model_type"] == "C3D":
-            return C3D()
         else:
             raise ValueError(f"Unknown model_type: {self.hparams['model_type']}")
 

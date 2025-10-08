@@ -13,7 +13,7 @@ data:
 
 # Model Configuration
 model:
-  model_type: "single_frame"  # Options: "single_frame", "early_fusion", "late_fusion", "CNN3D", "C3D"
+  model_type: "single_frame"  # Options: "single_frame", "early_fusion", "late_fusion", "CNN3D"
   num_classes: 10
   num_frames: 10
 
@@ -30,8 +30,7 @@ training:
 # Logging and Checkpoints
 logging:
   experiment_name: "action_recognition"
-  checkpoint_dir: "checkpoints"
-  log_dir: "logs"
+  log_dir: "experiments"
   
 # Reproducibility
 seed: 42
@@ -49,3 +48,14 @@ seed: 42
 #   8: "TrampolineJumping"
   # 9: "WallPushups"
 
+hydra:
+  run:
+    # Unified per-run working directory: experiments/<model>/<date>/<time>
+    dir: ${logging.log_dir}/${model.model_type}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    # Where multiruns land (kept separate to avoid mixing with single runs)
+    dir: ${logging.log_dir}/${model.model_type}/multiruns/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: true
+  output_subdir: .hydra

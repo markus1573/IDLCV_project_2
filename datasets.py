@@ -81,8 +81,18 @@ class FrameVideoDataset(torch.utils.data.Dataset):
         frames = []
         for i in range(1, self.n_sampled_frames + 1):
             frame_file = os.path.join(frames_dir, f"frame_{i}.jpg")
-            frame = Image.open(frame_file).convert("RGB")
-            frames.append(frame)
+            if os.path.exists(frame_file):
+                frame = Image.open(frame_file).convert("RGB")
+                frames.append(frame)
+            else:
+                # If frame doesn't exist, use the last available frame
+                if frames:
+                    frames.append(frames[-1])  # Duplicate the last frame
+                else:
+                    # If no frames exist at all, this is a serious data issue
+                    raise FileNotFoundError(
+                        f"No frames found in {frames_dir}. Expected at least frame_1.jpg"
+                    )
 
         return frames
 

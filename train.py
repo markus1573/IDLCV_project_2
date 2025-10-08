@@ -10,6 +10,7 @@ from pytorch_lightning.callbacks import (
 from pytorch_lightning.loggers import CSVLogger
 from omegaconf import DictConfig
 import hydra
+from hydra.utils import to_absolute_path
 
 from datamodules import ActionRecognitionDataModule
 from models import ActionRecognitionModel
@@ -17,13 +18,13 @@ from models import ActionRecognitionModel
 
 def _validate_dataset_model_compatibility(dataset_type: str, model_type: str) -> None:
     """Validate that dataset type is compatible with model type."""
-    if model_type in ["single_frame", "early_fusion", "late_fusion"]:
+    if model_type == "single_frame":
         if dataset_type != "frame_image":
             raise ValueError(
                 f"Model type '{model_type}' requires 'frame_image' dataset, "
                 f"but got '{dataset_type}'"
             )
-    elif model_type in ["CNN3D", "C3D"]:
+    elif model_type in ["early_fusion", "late_fusion", "CNN3D"]:
         if dataset_type != "frame_video":
             raise ValueError(
                 f"Model type '{model_type}' requires 'frame_video' dataset, "
@@ -38,6 +39,8 @@ def main(cfg: DictConfig) -> None:
     """Train Action Recognition Model with Hydra configuration."""
 
     print(f"\nLoaded configuration from conf/config.yaml")
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Model type: {cfg.model.model_type}")
 
     # Validate dataset-model compatibility
     _validate_dataset_model_compatibility(cfg.data.dataset_type, cfg.model.model_type)
@@ -66,7 +69,7 @@ def main(cfg: DictConfig) -> None:
 
     # Initialize data module
     datamodule = ActionRecognitionDataModule(
-        root_dir=cfg.data.root_dir,
+        root_dir=to_absolute_path(cfg.data.root_dir),
         dataset_type=cfg.data.dataset_type,
         batch_size=cfg.data.batch_size,
         num_workers=cfg.data.num_workers,
@@ -86,24 +89,30 @@ def main(cfg: DictConfig) -> None:
         max_epochs=cfg.training.max_epochs,
     )
 
-    # Create experiment directory with model type
-    model_specific_name = f"{cfg.logging.experiment_name}_{cfg.model.model_type}"
-    experiment_dir = os.path.join(cfg.logging.log_dir, model_specific_name)
-    checkpoint_dir = os.path.join(cfg.logging.checkpoint_dir, model_specific_name)
+    # Hydra automatically creates versioned directories
+    # Current working directory is the versioned directory for this run
+    version_dir = os.getcwd()
 
-    os.makedirs(experiment_dir, exist_ok=True)
-    os.makedirs(checkpoint_dir, exist_ok=True)
+    print(f"Starting training for {cfg.model.model_type}")
+    print(f"Version directory: {version_dir}")
+
+    # Ensure standard subdirectories exist within this run directory
+    os.makedirs(os.path.join(version_dir, "best-val"), exist_ok=True)
+    os.makedirs(os.path.join(version_dir, "logs"), exist_ok=True)
+    os.makedirs(os.path.join(version_dir, "outputs"), exist_ok=True)
 
     # Callbacks
+    checkpoint_cb = ModelCheckpoint(
+        dirpath="best-val",  # Save checkpoints under best-val within run dir
+        filename="best-{val/acc:.4f}",
+        monitor="val/acc",
+        mode="max",
+        save_top_k=1,  # Only save the best model for this training run
+        save_last=False,  # Don't save last checkpoint
+    )
+
     callbacks = [
-        ModelCheckpoint(
-            dirpath=checkpoint_dir,
-            filename="{epoch:02d}-{val/loss:.3f}-{val/acc:.3f}",
-            monitor="val/acc",
-            mode="max",
-            save_top_k=3,
-            save_last=True,
-        ),
+        checkpoint_cb,
         EarlyStopping(
             monitor="val/loss",
             patience=cfg.training.patience,
@@ -114,8 +123,8 @@ def main(cfg: DictConfig) -> None:
         RichProgressBar(),
     ]
 
-    # Loggers
-    logger = CSVLogger(save_dir=cfg.logging.log_dir, name=model_specific_name)
+    # Logger: write CSV logs into ./logs without nested version_*
+    logger = CSVLogger(save_dir="logs", name="", version="")
 
     # Initialize trainer
     trainer = pl.Trainer(
@@ -139,11 +148,31 @@ def main(cfg: DictConfig) -> None:
     # Train the model
     trainer.fit(model, datamodule=datamodule)
 
-    # Test the model
+    # Test the model using the best checkpoint
     print("\n" + "=" * 50)
     print("Testing best model...")
     print("=" * 50 + "\n")
-    trainer.test(model, datamodule=datamodule, ckpt_path="best")
+
+    # Resolve the best checkpoint path (prefer callback metadata, fallback to search)
+    best_ckpt_path = (
+        checkpoint_cb.best_model_path if checkpoint_cb.best_model_path else None
+    )
+    if not best_ckpt_path:
+        ckpt_dir = os.path.join(version_dir, "best-val")
+        ckpt_files = [f for f in os.listdir(ckpt_dir) if f.endswith(".ckpt")]
+        if ckpt_files:
+            best_ckpt = max(
+                ckpt_files, key=lambda x: float(x.split("-")[1].replace(".ckpt", ""))
+            )
+            best_ckpt_path = os.path.join(ckpt_dir, best_ckpt)
+
+    if best_ckpt_path and os.path.isfile(best_ckpt_path):
+        print(f"Loading best checkpoint: {best_ckpt_path}")
+        best_model = ActionRecognitionModel.load_from_checkpoint(best_ckpt_path)
+        trainer.test(best_model, datamodule=datamodule)
+    else:
+        print("No checkpoint found, testing current model...")
+        trainer.test(model, datamodule=datamodule)
 
 
 if __name__ == "__main__":

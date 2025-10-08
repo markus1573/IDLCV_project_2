@@ -8,28 +8,23 @@ echo "==================================="
 
 # Train Single Frame Model (for single frame classification)
 echo ""
-echo "1/5: Training Single Frame Model..."
+echo "1/4: Training Single Frame Model..."
 python train.py --config-name=experiment_single_frame
 
 # Train Early Fusion Model (for single frame classification)
 echo ""
-echo "2/5: Training Early Fusion Model..."
+echo "2/4: Training Early Fusion Model..."
 python train.py --config-name=experiment_early_fusion
 
 # Train Late Fusion Model (for single frame classification)
 echo ""
-echo "3/5: Training Late Fusion Model..."
+echo "3/4: Training Late Fusion Model..."
 python train.py --config-name=experiment_late_fusion
 
 # Train 3D CNN (for video classification)
 echo ""
-echo "4/5: Training 3D CNN..."
+echo "4/4: Training 3D CNN..."
 python train.py --config-name=experiment_cnn3d
-
-# Train C3D (for video classification)
-echo ""
-echo "5/5: Training C3D..."
-python train.py --config-name=experiment_c3d
 
 echo ""
 echo "All models trained!"

@@ -11,5 +11,5 @@ python train.py
 
 echo ""
 echo "Training completed!"
-echo "Check logs/ and checkpoints/ directories for results."
+echo "Check experiments/<model>/<date>/<time>/ for logs, checkpoints and outputs."
 

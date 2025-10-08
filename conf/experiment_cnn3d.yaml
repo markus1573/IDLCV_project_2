@@ -10,10 +10,10 @@ model:
 data:
   dataset_type: frame_video
   batch_size: 8
-  n_sampled_frames: 16
+  n_sampled_frames: 10
 
 training:
-  max_epochs: 50
+  max_epochs: 30
 
 logging:
   experiment_name: cnn3d_experiment
