@@ -1,2 +1,2 @@
 # IDLCV_project_2
-Project 2
+William ville have en README, so here we are...
