@@ -108,14 +108,13 @@ class ActionRecognitionModel(pl.LightningModule):
         num_frames: int = 10,
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
-        dropout: float = 0.5,
-        hidden_size: int = 256,
-        num_layers: int = 2,
+        max_epochs: int = 100,
     ):
         super().__init__()
         self.save_hyperparameters()
         
         self.model = self.get_model()
+        self.criterion = nn.CrossEntropyLoss()
 
     def get_model(self):
         if self.hparams['model_type'] == "single_frame":
@@ -135,15 +134,24 @@ class ActionRecognitionModel(pl.LightningModule):
         return self.model(x)
     
     def training_step(self, batch, batch_idx):
-        
-        return
+        x, y = batch  # batch should be (inputs, targets)
+        logits = self.forward(x)
+        loss = self.criterion(logits, y)
+        self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return loss
     
     def validation_step(self, batch, batch_idx):
-        
+        x, y = batch  # batch should be (inputs, targets)
+        logits = self.forward(x)
+        loss = self.criterion(logits, y)
+        self.log("val/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return 
     
     def test_step(self, batch, batch_idx):
-
+        x, y = batch  # batch should be (inputs, targets)
+        logits = self.forward(x)
+        loss = self.criterion(logits, y)
+        self.log("test/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return
     
     def configure_optimizers(self):
@@ -153,7 +161,7 @@ class ActionRecognitionModel(pl.LightningModule):
             weight_decay=self.hparams['weight_decay']
         )
         
-        scheduler = None
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams['max_epochs'], eta_min=1e-6)
         
         
         return {
