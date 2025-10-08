@@ -77,11 +77,14 @@ class late_fusion_model(nn.Module):
         return out
 
 class CNN3D(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes = 10):
         super().__init__()
+        self.model = tv_models.video.r3d_18(num_classes=num_classes)
         
     def forward(self, x):
-        return
+        assert len(x.shape) == 5, "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+        out = self.model(x)
+        return out
 
 class C3D(nn.Module):
     def __init__(self):
