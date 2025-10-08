@@ -5,7 +5,7 @@ defaults:
   - config
 
 model:
-  model_type: early_fusion_model
+  model_type: early_fusion
 
 data:
   dataset_type: frame_image

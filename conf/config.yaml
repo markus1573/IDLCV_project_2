@@ -13,15 +13,15 @@ data:
 
 # Model Configuration
 model:
-  model_type: "single_frame_model"  # Options: "single_frame_model", "early_fusion_model", "late_fusion_model", "CNN3D", "C3D"
+  model_type: "single_frame"  # Options: "single_frame", "early_fusion", "late_fusion", "CNN3D", "C3D"
   num_classes: 10
-  dropout: 0.5
+  num_frames: 10
 
 # Training Configuration
 training:
   learning_rate: 0.001
   weight_decay: 0.0001
-  max_epochs: 100
+  max_epochs: 30
   accelerator: "auto"  # Options: "auto", "gpu", "cpu", "mps"
   devices: 1
   precision: "32"  # Options: "16", "32", "bf16"

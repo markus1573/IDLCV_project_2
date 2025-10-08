@@ -126,15 +126,21 @@ class ActionRecognitionModel(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss()
 
     def get_model(self):
-        if self.hparams['model_type'] == "single_frame":
-            return single_frame_model(num_classes=self.hparams['num_classes'])
-        elif self.hparams['model_type'] == "early_fusion":
-            return early_fusion_model(num_classes=self.hparams['num_classes'], num_frames=self.hparams['num_frames'])
-        elif self.hparams['model_type'] == "late_fusion":
-            return late_fusion_model(num_classes=self.hparams['num_classes'], num_frames=self.hparams['num_frames'])
-        elif self.hparams['model_type'] == "CNN3D":
-            return CNN3D(num_classes=self.hparams['num_classes'])
-        elif self.hparams['model_type'] == "C3D":
+        if self.hparams["model_type"] == "single_frame":
+            return single_frame_model(num_classes=self.hparams["num_classes"])
+        elif self.hparams["model_type"] == "early_fusion":
+            return early_fusion_model(
+                num_classes=self.hparams["num_classes"],
+                num_frames=self.hparams["num_frames"],
+            )
+        elif self.hparams["model_type"] == "late_fusion":
+            return late_fusion_model(
+                num_classes=self.hparams["num_classes"],
+                num_frames=self.hparams["num_frames"],
+            )
+        elif self.hparams["model_type"] == "CNN3D":
+            return CNN3D(num_classes=self.hparams["num_classes"])
+        elif self.hparams["model_type"] == "C3D":
             return C3D()
         else:
             raise ValueError(f"Unknown model_type: {self.hparams['model_type']}")
@@ -146,41 +152,56 @@ class ActionRecognitionModel(pl.LightningModule):
         x, y = batch  # batch should be (inputs, targets)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
-        self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log(
+            "train/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True
+        )
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         x, y = batch  # batch should be (inputs, targets)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
-        self.log("val/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        return 
-    
+
+        # Calculate accuracy
+        preds = torch.argmax(logits, dim=1)
+        acc = (preds == y).float().mean()
+
+        self.log(
+            "val/loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
+        )
+        self.log(
+            "val/acc", acc, on_step=False, on_epoch=True, prog_bar=True, logger=True
+        )
+        return
+
     def test_step(self, batch, batch_idx):
         x, y = batch  # batch should be (inputs, targets)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
-        self.log("test/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log(
+            "test/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True
+        )
         return
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
             self.parameters(),
-            lr=self.hparams['learning_rate'],
-            weight_decay=self.hparams['weight_decay']
+            lr=self.hparams["learning_rate"],
+            weight_decay=self.hparams["weight_decay"],
         )
-        
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams['max_epochs'], eta_min=1e-6)
-        
-        
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=self.hparams["max_epochs"], eta_min=1e-6
+        )
+
         return {
-            'optimizer': optimizer,
-            'lr_scheduler': {
-                'scheduler': scheduler,
-                'monitor': 'val/loss',
-                'interval': 'epoch',
-                'frequency': 1
-            }
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "val/loss",
+                "interval": "epoch",
+                "frequency": 1,
+            },
         }
 
 
@@ -202,6 +223,7 @@ def main():
             x = torch.randn(1, 3, 10, 112, 112)
         model.forward(x)
         print(model.forward(x).shape)
+
 
 if __name__ == "__main__":
     main()
