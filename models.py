@@ -3,14 +3,18 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import torchmetrics
 from typing import Optional
+import torchvision.models as tv_models
 
 
-class aggregation_model(nn.Module):
+class single_frame_model(nn.Module):
     def __init__(self):
         super().__init__()
-        
+        # resnet18
+        self.model = tv_models.resnet18()
+        self.model.fc = nn.Linear(self.model.fc.in_features, 10)
+
     def forward(self, x):
-        return
+        return self.model(x)
 
 class early_fusion_model(nn.Module):
     def __init__(self):
@@ -65,7 +69,7 @@ class ActionRecognitionModel(pl.LightningModule):
 
     def get_model(self):
         if self.hparams['model_type'] == "aggregation":
-            return aggregation_model()
+            return single_frame_model()
         elif self.hparams['model_type'] == "early_fusion":
             return early_fusion_model()
         elif self.hparams['model_type'] == "late_fusion":
