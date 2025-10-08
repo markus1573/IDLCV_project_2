@@ -142,17 +142,7 @@ def main():
     ]
     
     # Loggers
-    loggers = [
-        TensorBoardLogger(
-            save_dir=args.log_dir,
-            name=args.experiment_name,
-            version=None,
-        ),
-        CSVLogger(
-            save_dir=args.log_dir,
-            name=args.experiment_name,
-        ),
-    ]
+    logger = CSVLogger(save_dir=args.log_dir,name=args.experiment_name)
     
     # Initialize trainer
     trainer = pl.Trainer(
@@ -161,7 +151,7 @@ def main():
         devices=args.devices,
         precision=args.precision,
         callbacks=callbacks,
-        logger=loggers,
+        logger=logger,
         fast_dev_run=args.fast_dev_run,
         deterministic=True,
         log_every_n_steps=10,
@@ -188,32 +178,6 @@ def main():
     print("="*50 + "\n")
     trainer.test(model, datamodule=datamodule, ckpt_path='best')
     
-    # Print confusion matrix
-    if hasattr(model, 'test_confusion'):
-        confusion_matrix = model.test_confusion.compute()
-        print("\nConfusion Matrix:")
-        print(confusion_matrix)
-        
-        # Save confusion matrix
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        
-        plt.figure(figsize=(12, 10))
-        sns.heatmap(
-            confusion_matrix.cpu().numpy(),
-            annot=True,
-            fmt='d',
-            cmap='Blues',
-            xticklabels=range(args.num_classes),
-            yticklabels=range(args.num_classes)
-        )
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        plt.title('Confusion Matrix')
-        plt.tight_layout()
-        plt.savefig(os.path.join(experiment_dir, 'confusion_matrix.png'))
-        print(f"\nConfusion matrix saved to {os.path.join(experiment_dir, 'confusion_matrix.png')}")
-
 
 if __name__ == '__main__':
     main()

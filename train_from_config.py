@@ -91,21 +91,11 @@ def main():
             verbose=True,
         ),
         LearningRateMonitor(logging_interval='epoch'),
-        RichProgressBar(),
     ]
     
     # Loggers
-    loggers = [
-        TensorBoardLogger(
-            save_dir=config['logging']['log_dir'],
-            name=config['logging']['experiment_name'],
-            version=None,
-        ),
-        CSVLogger(
-            save_dir=config['logging']['log_dir'],
-            name=config['logging']['experiment_name'],
-        ),
-    ]
+    logger = CSVLogger(save_dir=config['logging']['log_dir'],
+                       name=config['logging']['experiment_name'])
     
     # Initialize trainer
     trainer = pl.Trainer(
@@ -114,7 +104,7 @@ def main():
         devices=config['training']['devices'],
         precision=config['training']['precision'],
         callbacks=callbacks,
-        logger=loggers,
+        logger=logger,
         fast_dev_run=args.fast_dev_run,
         deterministic=True,
         log_every_n_steps=10,
@@ -140,38 +130,6 @@ def main():
     print("="*50 + "\n")
     trainer.test(model, datamodule=datamodule, ckpt_path='best')
     
-    # Print confusion matrix
-    if hasattr(model, 'test_confusion'):
-        confusion_matrix = model.test_confusion.compute()
-        print("\nConfusion Matrix:")
-        print(confusion_matrix)
-        
-        # Save confusion matrix
-        try:
-            import matplotlib.pyplot as plt
-            import seaborn as sns
-            
-            plt.figure(figsize=(12, 10))
-            class_labels = [config['classes'][i] for i in range(config['model']['num_classes'])]
-            sns.heatmap(
-                confusion_matrix.cpu().numpy(),
-                annot=True,
-                fmt='d',
-                cmap='Blues',
-                xticklabels=class_labels,
-                yticklabels=class_labels
-            )
-            plt.xlabel('Predicted')
-            plt.ylabel('True')
-            plt.title('Confusion Matrix')
-            plt.xticks(rotation=45, ha='right')
-            plt.yticks(rotation=0)
-            plt.tight_layout()
-            plt.savefig(os.path.join(experiment_dir, 'confusion_matrix.png'))
-            print(f"\nConfusion matrix saved to {os.path.join(experiment_dir, 'confusion_matrix.png')}")
-        except ImportError:
-            print("\nMatplotlib or seaborn not available. Skipping confusion matrix visualization.")
-
 
 if __name__ == '__main__':
     main()
