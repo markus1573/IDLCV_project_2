@@ -1,3 +1,7 @@
+import warnings
+
+warnings.filterwarnings("ignore", message=".*UnsupportedFieldAttributeWarning.*")
+
 import os
 import torch
 import pytorch_lightning as pl
@@ -7,7 +11,7 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     RichProgressBar,
 )
-from pytorch_lightning.loggers import CSVLogger
+from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from omegaconf import DictConfig
 import hydra
 from hydra.utils import to_absolute_path
@@ -123,8 +127,24 @@ def main(cfg: DictConfig) -> None:
         RichProgressBar(),
     ]
 
-    # Logger: write CSV logs into ./logs without nested version_*
-    logger = CSVLogger(save_dir="logs", name="", version="")
+    # Loggers: CSV for local logs and wandb for online tracking
+    loggers = [
+        CSVLogger(save_dir="logs", name="", version=""),
+    ]
+
+    # Add wandb logger if configured
+    if hasattr(cfg.logging, "wandb") and cfg.logging.wandb:
+        wandb_config = cfg.logging.wandb
+        wandb_logger = WandbLogger(
+            project=wandb_config.project,
+            entity=wandb_config.entity if wandb_config.entity else None,
+            tags=wandb_config.tags if wandb_config.tags else [],
+            notes=wandb_config.notes if wandb_config.notes else "",
+            offline=wandb_config.offline if wandb_config.offline else False,
+            name=f"{cfg.model.model_type}_{cfg.logging.experiment_name}",
+            save_dir="logs",
+        )
+        loggers.append(wandb_logger)
 
     # Initialize trainer
     trainer = pl.Trainer(
@@ -133,10 +153,33 @@ def main(cfg: DictConfig) -> None:
         devices=cfg.training.devices,
         precision=cfg.training.precision,
         callbacks=callbacks,
-        logger=logger,
+        logger=loggers,
         deterministic=True,
         log_every_n_steps=10,
     )
+
+    # Log hyperparameters to wandb if available
+    if hasattr(cfg.logging, "wandb") and cfg.logging.wandb:
+        wandb_logger = next(
+            (logger for logger in loggers if isinstance(logger, WandbLogger)), None
+        )
+        if wandb_logger:
+            # Log hyperparameters
+            wandb_logger.log_hyperparams(
+                {
+                    "model_type": cfg.model.model_type,
+                    "num_classes": cfg.model.num_classes,
+                    "num_frames": cfg.model.num_frames,
+                    "learning_rate": cfg.training.learning_rate,
+                    "weight_decay": cfg.training.weight_decay,
+                    "max_epochs": cfg.training.max_epochs,
+                    "batch_size": cfg.data.batch_size,
+                    "image_size": cfg.data.image_size,
+                    "n_sampled_frames": cfg.data.n_sampled_frames,
+                    "augment": cfg.data.augment,
+                    "seed": cfg.seed,
+                }
+            )
 
     # Print configuration
     print("\n" + "=" * 50)

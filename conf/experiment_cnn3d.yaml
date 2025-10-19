@@ -13,7 +13,13 @@ data:
   n_sampled_frames: 10
 
 training:
-  max_epochs: 30
+  max_epochs: 200
 
 logging:
   experiment_name: cnn3d_experiment
+  wandb:
+    project: "action-recognition"
+    entity: null
+    tags: ["cnn3d", "video"]
+    notes: "CNN3D action recognition experiment"
+    offline: false

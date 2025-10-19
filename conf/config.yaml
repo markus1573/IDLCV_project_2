@@ -21,16 +21,22 @@ model:
 training:
   learning_rate: 0.001
   weight_decay: 0.0001
-  max_epochs: 30
+  max_epochs: 80
   accelerator: "auto"  # Options: "auto", "gpu", "cpu", "mps"
   devices: 1
   precision: "32"  # Options: "16", "32", "bf16"
-  patience: 10  # For early stopping
+  patience: 20  # For early stopping
 
 # Logging and Checkpoints
 logging:
   experiment_name: "action_recognition"
   log_dir: "experiments"
+  wandb:
+    project: "action-recognition"
+    entity: null  # Set to your wandb username/team if needed
+    tags: []
+    notes: ""
+    offline: false
   
 # Reproducibility
 seed: 42
