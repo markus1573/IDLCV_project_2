@@ -1,0 +1,30 @@
+defaults:
+  - config
+
+model:
+  model_type: flow_resnet
+  num_classes: 10
+  num_frames: 10
+
+data:
+  dataset_type: frame_video_flow
+  root_dir: data/ufc10
+  batch_size: 8
+  num_workers: 4
+  image_size: [112, 112]
+  n_sampled_frames: 10
+  stack_frames: true
+  augment: true
+
+training:
+  learning_rate: 1e-3
+  weight_decay: 1e-4
+  max_epochs: 100
+  patience: 10
+  accelerator: gpu
+  devices: 1
+  precision: 32
+
+logging:
+  experiment_name: flowresnet
+  wandb: null

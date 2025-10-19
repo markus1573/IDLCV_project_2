@@ -36,6 +36,12 @@ def _validate_dataset_model_compatibility(dataset_type: str, model_type: str) ->
                 f"Model type '{model_type}' requires 'frame_video' dataset, "
                 f"but got '{dataset_type}'"
             )
+    elif model_type == "flow_resnet":
+        if dataset_type != "frame_video_flow":
+            raise ValueError(
+                f"Model type '{model_type}' requires 'frame_video_flow' dataset, "
+                f"but got '{dataset_type}'"
+            )
     else:
         raise ValueError(f"Unknown model type: '{model_type}'")
 

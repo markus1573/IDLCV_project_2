@@ -96,6 +96,72 @@ class FrameVideoDataset(torch.utils.data.Dataset):
 
         return frames
 
+class FrameVideoFlowDataset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        root_dir="data/ufc10",
+        split="train",
+        transform=None,
+        stack_frames=True,
+        n_sampled_frames=10,
+    ):
+        self.rgb_paths = sorted(glob(f"{root_dir}/frames/{split}/*/*/*.jpg"))
+        self.flow_root = root_dir.replace("frames", "flows")
+        self.df = pd.read_csv(f"{root_dir}/metadata/{split}.csv")
+        self.split = split
+        self.transform = transform
+        self.stack_frames = stack_frames
+        self.n_sampled_frames = n_sampled_frames
+
+    def __len__(self):
+        return len(self.rgb_paths)
+
+    def _get_meta(self, attr, value):
+        return self.df.loc[self.df[attr] == value]
+
+    def __getitem__(self, idx):
+        rgb_frame_path = self.rgb_paths[idx]
+        rgb_frame_path = rgb_frame_path.replace("\\", "/")
+        video_name = rgb_frame_path.split("/")[-2]
+        video_meta = self._get_meta("video_name", video_name)
+        label = video_meta["label"].item()
+
+        # Derive frame directory and load both RGB and Flow
+        video_frames_dir = rgb_frame_path.split("frame_")[0]
+        rgb_frames = self.load_frames(video_frames_dir, mode="frames")
+        flow_frames = self.load_frames(video_frames_dir.replace("frames", "flows"), mode="flows")
+
+        if self.transform:
+            rgb_frames = [self.transform(f) for f in rgb_frames]
+            flow_frames = [self.transform(f) for f in flow_frames]
+        else:
+            rgb_frames = [T.ToTensor()(f) for f in rgb_frames]
+            flow_frames = [T.ToTensor()(f) for f in flow_frames]
+
+        # Stack frames
+        if self.stack_frames:
+            rgb_tensor = torch.stack(rgb_frames).permute(1, 0, 2, 3)   # [3, T, H, W]
+            flow_tensor = torch.stack(flow_frames).permute(1, 0, 2, 3) # [2, T, H, W]
+            combined = torch.cat([rgb_tensor, flow_tensor], dim=0)     # [5, T, H, W]
+        else:
+            combined = list(zip(rgb_frames, flow_frames))
+
+        return combined, label
+
+    def load_frames(self, frames_dir, mode="frames"):
+        frames = []
+        for i in range(1, self.n_sampled_frames + 1):
+            frame_file = os.path.join(frames_dir, f"frame_{i}.jpg") if mode == "frames" else os.path.join(frames_dir, f"flow_{i}.jpg")
+            if os.path.exists(frame_file):
+                frame = Image.open(frame_file).convert("RGB")
+                frames.append(frame)
+            else:
+                if frames:
+                    frames.append(frames[-1])  # duplicate last frame
+                else:
+                    raise FileNotFoundError(f"No {mode} frames found in {frames_dir}")
+        return frames
+
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader

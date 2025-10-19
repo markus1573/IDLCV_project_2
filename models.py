@@ -233,7 +233,7 @@ class ActionRecognitionModel(pl.LightningModule):
 
 # create main function to test all models
 def main():
-    for model_type in ["single_frame", "early_fusion", "late_fusion", "CNN3D"]:
+    for model_type in ["single_frame", "early_fusion", "late_fusion", "CNN3D", "flow_resnet"]:
         model = ActionRecognitionModel(
             model_type=model_type,
             num_classes=10,
@@ -247,6 +247,8 @@ def main():
             x = torch.randn(1, 3, 10, 112, 112)
         elif model_type == "CNN3D":
             x = torch.randn(1, 3, 10, 112, 112)
+        elif model_type == "flow_resnet":
+            x = torch.randn(1, 5, 10, 112, 112)
         model.forward(x)
         print(model.forward(x).shape)
 

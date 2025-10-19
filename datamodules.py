@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
-from datasets import FrameImageDataset, FrameVideoDataset
+from datasets import FrameImageDataset, FrameVideoDataset, FrameVideoFlowDataset
 
 
 class ActionRecognitionDataModule(pl.LightningDataModule):
@@ -86,6 +86,29 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
             self.train_dataset.n_sampled_frames = self.n_sampled_frames
             self.val_dataset.n_sampled_frames = self.n_sampled_frames
             self.test_dataset.n_sampled_frames = self.n_sampled_frames
+        elif self.dataset_type == "frame_video_flow":
+            self.train_dataset = FrameVideoFlowDataset(
+                root_dir=self.root_dir,
+                split="train",
+                transform=train_transform,
+                stack_frames=self.stack_frames,
+                n_sampled_frames=self.n_sampled_frames,
+            )
+            self.val_dataset = FrameVideoFlowDataset(
+                root_dir=self.root_dir,
+                split="val",
+                transform=val_transform,
+                stack_frames=self.stack_frames,
+                n_sampled_frames=self.n_sampled_frames,
+            )
+            self.test_dataset = FrameVideoFlowDataset(
+                root_dir=self.root_dir,
+                split="test",
+                transform=val_transform,
+                stack_frames=self.stack_frames,
+                n_sampled_frames=self.n_sampled_frames,
+            )
+
         else:
             raise ValueError(f"Unknown dataset_type: {self.dataset_type}")
 

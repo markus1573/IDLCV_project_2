@@ -40,6 +40,10 @@ case $LSB_JOBINDEX in
         echo "Job $LSB_JOBINDEX: Training CNN3D Model"
         python train.py --config-name=experiment_cnn3d
         ;;
+    5)
+        echo "Job $LSB_JOBINDEX: Training FlowResNet Model"
+        python train.py --config-name=experiment_flow_resnet
+        ;;
 
     *)
         echo "Invalid job index: $LSB_JOBINDEX"
