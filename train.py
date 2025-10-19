@@ -3,6 +3,8 @@ import warnings
 warnings.filterwarnings("ignore", message=".*UnsupportedFieldAttributeWarning.*")
 
 import os
+import random
+import numpy as np
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import (
@@ -51,6 +53,11 @@ def main(cfg: DictConfig) -> None:
 
     # Set seed for reproducibility
     pl.seed_everything(cfg.seed, workers=True)
+    random.seed(cfg.seed)
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(cfg.seed)
 
     # Check for CUDA and enable Tensor Core optimization
     if torch.cuda.is_available():

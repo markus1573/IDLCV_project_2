@@ -1,6 +1,6 @@
 # Configuration file for Action Recognition Training
 
-# Data Configuration
+# Default Data Configuration
 data:
   root_dir: "data/ufc10"
   dataset_type: "frame_image"  # Options: "frame_image", "frame_video"
@@ -11,13 +11,13 @@ data:
   stack_frames: true
   augment: true
 
-# Model Configuration
+# Default Model Configuration
 model:
   model_type: "single_frame"  # Options: "single_frame", "early_fusion", "late_fusion", "CNN3D"
   num_classes: 10
   num_frames: 10
 
-# Training Configuration
+# Default Training Configuration
 training:
   learning_rate: 0.001
   weight_decay: 0.0001
@@ -27,7 +27,7 @@ training:
   precision: "32"  # Options: "16", "32", "bf16"
   patience: 20  # For early stopping
 
-# Logging and Checkpoints
+# Default Logging and Checkpoints Configuration
 logging:
   experiment_name: "action_recognition"
   log_dir: "experiments"
@@ -38,21 +38,9 @@ logging:
     notes: ""
     offline: false
   
-# Reproducibility
+# Default Reproducibility Configuration
 seed: 42
 
-# Action Classes (for reference)
-# classes:
-#   0: "BodyWeightSquats"
-#   1: "HandstandPushups"
-#   2: "HandstandWalking"
-#   3: "JumpingJack"
-#   4: "JumpRope"
-#   5: "Lunges"
-#   6: "PullUps"
-#   7: "PushUps"
-#   8: "TrampolineJumping"
-  # 9: "WallPushups"
 
 hydra:
   run:
