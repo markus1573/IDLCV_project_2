@@ -25,7 +25,7 @@ training:
   accelerator: "auto"  # Options: "auto", "gpu", "cpu", "mps"
   devices: 1
   precision: "32"  # Options: "16", "32", "bf16"
-  patience: 20  # For early stopping
+  patience: 40  # For early stopping
 
 # Default Logging and Checkpoints Configuration
 logging:
