@@ -1,21 +1,23 @@
 #!/bin/bash
 
-# LSF Job Array Script for Parallel Model Training
-# This script submits all model types as parallel jobs on HPC
-
-# Job array parameters - one job per model type
+#BSUB -q gpuv100
 #BSUB -J action_recognition[1-4]
-#BSUB -q hpc
-#BSUB -W 4:00
-#BSUB -R "rusage[mem=8GB]"
-#BSUB -n 1
+#BSUB -n 4
+#BSUB -R "rusage[mem=10GB]"
 #BSUB -R "span[hosts=1]"
-#BSUB -o logs/hpc_training_%J_%I.out
-#BSUB -e logs/hpc_training_%J_%I.err
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -W 4:00
+#BSUB -o hpc_training_%J_%I.out
+#BSUB -e hpc_training_%J_%I.err
+#BSUB -B
+#BSUB -N
 
+
+module load python3/3.12.11 
 # Initialize conda environment
-source /dtu/projects/02613_2025/conda/conda_init.sh
-conda activate 02613
+source idlcv_venv/bin/activate
+
+cd IDLCV_project_2
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
