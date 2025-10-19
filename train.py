@@ -219,10 +219,20 @@ def main(cfg: DictConfig) -> None:
     if best_ckpt_path and os.path.isfile(best_ckpt_path):
         print(f"Loading best checkpoint: {best_ckpt_path}")
         best_model = ActionRecognitionModel.load_from_checkpoint(best_ckpt_path)
-        trainer.test(best_model, datamodule=datamodule)
+        test_results = trainer.test(best_model, datamodule=datamodule)
+        if test_results:
+            metrics = test_results[0]
+            acc = metrics.get("test/acc")
+            if acc is not None:
+                print(f"Test accuracy (best ckpt): {acc:.4f}")
     else:
         print("No checkpoint found, testing current model...")
-        trainer.test(model, datamodule=datamodule)
+        test_results = trainer.test(model, datamodule=datamodule)
+        if test_results:
+            metrics = test_results[0]
+            acc = metrics.get("test/acc")
+            if acc is not None:
+                print(f"Test accuracy (current model): {acc:.4f}")
 
 
 if __name__ == "__main__":

@@ -168,8 +168,14 @@ class ActionRecognitionModel(pl.LightningModule):
         x, y = batch  # batch should be (inputs, targets)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
+        preds = torch.argmax(logits, dim=1)
+        acc = (preds == y).float().mean()
+
         self.log(
-            "test/loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True
+            "test/loss", loss, on_step=False, on_epoch=True, prog_bar=False, logger=True
+        )
+        self.log(
+            "test/acc", acc, on_step=False, on_epoch=True, prog_bar=True, logger=True
         )
         return
 
