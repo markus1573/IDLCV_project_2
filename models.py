@@ -97,6 +97,36 @@ class CNN3D(nn.Module):
         return out
 
 
+class FlowResNet18(nn.Module):
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.model_image = tv_models.resnet18(num_classes=num_classes)
+        self.model_flow = tv_models.resnet18(num_classes=num_classes)
+
+        # Get feature dimension before removing fc
+        feature_dim = self.model_image.fc.in_features  # 512 for ResNet18
+        
+        # Remove fc layer - use Identity instead of None
+        self.model_image.fc = nn.Identity()
+        self.model_flow.fc = nn.Identity()
+
+        # New classifier that takes concatenated features
+        self.fc = nn.Linear(feature_dim * 2, num_classes)
+
+
+    def forward(self, x):
+        assert (
+            len(x.shape) == 5
+        ), "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+
+        image = x[:, :3, :, :, :]  # [B, 3, T, H, W]
+        flow = x[:, 3:, :, :, :]    # [B, 2, T, H, W]
+        feat_image = self.model_image(image)
+        feat_flow = self.model_flow(flow)
+        fused = torch.cat([feat_image, feat_flow], dim=1)
+        return self.fc(fused)
+
+
 class ActionRecognitionModel(pl.LightningModule):
     """
     TODO
