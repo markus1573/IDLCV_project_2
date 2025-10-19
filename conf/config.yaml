@@ -2,7 +2,7 @@
 
 # Default Data Configuration
 data:
-  root_dir: "data/ufc10"
+  root_dir: "/dtu/datasets1/02516/ucf101_noleakage"
   dataset_type: "frame_image"  # Options: "frame_image", "frame_video"
   batch_size: 16
   num_workers: 4

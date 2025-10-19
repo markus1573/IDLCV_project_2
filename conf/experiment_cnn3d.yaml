@@ -20,6 +20,6 @@ logging:
   wandb:
     project: "action-recognition"
     entity: null
-    tags: ["cnn3d", "video"]
+    tags: ["cnn3d", "video","no_leakage","ES40"]
     notes: "CNN3D action recognition experiment"
     offline: false

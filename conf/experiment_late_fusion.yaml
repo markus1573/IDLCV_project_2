@@ -19,6 +19,6 @@ logging:
   wandb:
     project: "action-recognition"
     entity: null
-    tags: ["late_fusion", "video"]
+    tags: ["late_fusion", "video","no_leakage","ES40"]
     notes: "Late fusion action recognition experiment"
     offline: false
