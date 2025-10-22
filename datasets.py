@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import Image
 import torch
 from torchvision import transforms as T
+import numpy as np
 
 
 class FrameImageDataset(torch.utils.data.Dataset):

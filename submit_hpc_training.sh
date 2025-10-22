@@ -1,23 +1,23 @@
 #!/bin/bash
 
 #BSUB -q gpuv100
-#BSUB -J action_recognition[1-4]
+#BSUB -J action_recognition[5]
 #BSUB -n 4
 #BSUB -R "rusage[mem=10GB]"
 #BSUB -R "span[hosts=1]"
 #BSUB -gpu "num=1:mode=exclusive_process"
 #BSUB -W 4:00
-#BSUB -o hpc_training_%J_%I.out
-#BSUB -e hpc_training_%J_%I.err
+#BSUB -o hpc_outputs/hpc_training_%J_%I.out
+#BSUB -e hpc_outputs/hpc_training_%J_%I.err
 #BSUB -B
 #BSUB -N
 
 
 module load python3/3.12.11 
 # Initialize conda environment
-source idlcv_venv/bin/activate
+source ~/miniconda3/bin/activate computer_vison
 
-cd IDLCV_project_2
+# cd IDLCV_project_2
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
