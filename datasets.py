@@ -4,6 +4,7 @@ import pandas as pd
 from PIL import Image
 import torch
 from torchvision import transforms as T
+import numpy as np
 
 
 class FrameImageDataset(torch.utils.data.Dataset):
@@ -133,7 +134,14 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
 
         if self.transform:
             rgb_frames = [self.transform(f) for f in rgb_frames]
-            flow_frames = [self.transform(f) for f in flow_frames]
+            flow_transform = T.Compose(
+            [
+                T.Resize([112, 112]),
+                T.RandomHorizontalFlip(p=0.5),
+                T.RandomRotation(degrees=10)
+            ]
+            )
+            flow_frames = [flow_transform(f) for f in flow_frames]
         else:
             rgb_frames = [T.ToTensor()(f) for f in rgb_frames]
             flow_frames = [T.ToTensor()(f) for f in flow_frames]
@@ -150,16 +158,28 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
 
     def load_frames(self, frames_dir, mode="frames"):
         frames = []
-        for i in range(1, self.n_sampled_frames + 1):
-            frame_file = os.path.join(frames_dir, f"frame_{i}.png") if mode == "frames" else os.path.join(frames_dir, f"flow_{i}.png")
-            if os.path.exists(frame_file):
-                frame = Image.open(frame_file).convert("RGB")
-                frames.append(frame)
-            else:
-                if frames:
-                    frames.append(frames[-1])  # duplicate last frame
+        if mode == "frames":
+            for i in range(1, self.n_sampled_frames + 1):
+                frame_file = os.path.join(frames_dir, f"frame_{i}.jpg")
+                if os.path.exists(frame_file):
+                    frame = Image.open(frame_file).convert("RGB")
+                    frames.append(frame)
                 else:
-                    raise FileNotFoundError(f"No {mode} frames found in {frames_dir}")
+                    if frames:
+                        frames.append(frames[-1])  # duplicate last frame
+                    else:
+                        raise FileNotFoundError(f"No {mode} frames found in {frames_dir}")
+
+        else:
+            for i in range(1, self.n_sampled_frames):
+                frame_file = os.path.join(frames_dir, f"flow_{i}_{i+1}.npy")
+                if os.path.exists(frame_file):
+                    frame = np.load(frame_file, allow_pickle=True)
+                    frame = torch.from_numpy(frame)
+                    frames.append(frame)
+                else:
+                    if frames:
+                        frames.append(frames[-1])  # duplicate last frame
         return frames
 
 
