@@ -102,6 +102,14 @@ class FlowResNet18(nn.Module):
         super().__init__()
         self.model_image = tv_models.resnet18(num_classes=num_classes)
         self.model_flow = tv_models.resnet18(num_classes=num_classes)
+        self.model_flow.conv1 = nn.Conv2d(
+            in_channels=2,
+            out_channels=64,  #
+            kernel_size=7,    #
+            stride=2,         # Copied from resnet18.
+            padding=3,        #
+            bias=False,       #
+        )
 
         # Get feature dimension before removing fc
         feature_dim = self.model_image.fc.in_features  # 512 for ResNet18
@@ -116,11 +124,11 @@ class FlowResNet18(nn.Module):
 
     def forward(self, x):
         assert (
-            len(x.shape) == 5
-        ), "x must be a 5D tensor: [batch, channels, num_frames, height, width]"
+            len(x.shape) == 4
+        ), "x must be a 4D tensor: [batch, channels, height, width]"
 
-        image = x[:, :3, :, :, :]  # [B, 3, T, H, W]
-        flow = x[:, 3:, :, :, :]    # [B, 2, T, H, W]
+        image = x[:, :3, :, :]  # [B, 3, H, W]
+        flow = x[:, 3:, :, :]    # [B, 2, H, W]
         feat_image = self.model_image(image)
         feat_flow = self.model_flow(flow)
         fused = torch.cat([feat_image, feat_flow], dim=1)
@@ -162,6 +170,8 @@ class ActionRecognitionModel(pl.LightningModule):
             )
         elif self.hparams["model_type"] == "CNN3D":
             return CNN3D(num_classes=self.hparams["num_classes"])
+        elif self.hparams["model_type"] == "flow_resnet":
+            return FlowResNet18(num_classes=self.hparams["num_classes"])
         else:
             raise ValueError(f"Unknown model_type: {self.hparams['model_type']}")
 
@@ -248,7 +258,7 @@ def main():
         elif model_type == "CNN3D":
             x = torch.randn(1, 3, 10, 112, 112)
         elif model_type == "flow_resnet":
-            x = torch.randn(1, 5, 10, 112, 112)
+            x = torch.randn(1, 5, 112, 112)
         model.forward(x)
         print(model.forward(x).shape)
 
