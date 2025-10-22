@@ -8,7 +8,7 @@ model:
 
 data:
   dataset_type: frame_video_flow
-  root_dir: data/ufc10
+  root_dir: /dtu/datasets1/02516/ucf101_noleakage
   batch_size: 8
   num_workers: 4
   image_size: [112, 112]
