@@ -94,6 +94,7 @@ def main(cfg: DictConfig) -> None:
         n_sampled_frames=cfg.data.n_sampled_frames,
         stack_frames=cfg.data.stack_frames,
         augment=cfg.data.augment,
+        seed=cfg.seed,
     )
 
     # Initialize model
