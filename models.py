@@ -98,39 +98,36 @@ class CNN3D(nn.Module):
 
 
 class FlowResNet18(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, num_frames=10):
         super().__init__()
+        # Spatial stream for single RGB frame
         self.model_image = tv_models.resnet18(num_classes=num_classes)
+
+        # Temporal stream expects stacked flows: 2*(T-1) channels
+        in_channels_flow = 2 * (num_frames - 1)
         self.model_flow = tv_models.resnet18(num_classes=num_classes)
         self.model_flow.conv1 = nn.Conv2d(
-            in_channels=2,
-            out_channels=64,  #
-            kernel_size=7,    #
-            stride=2,         # Copied from resnet18.
-            padding=3,        #
-            bias=False,       #
+            in_channels=in_channels_flow,
+            out_channels=64,
+            kernel_size=7,
+            stride=2,
+            padding=3,
+            bias=False,
         )
 
-        # Get feature dimension before removing fc
-        feature_dim = self.model_image.fc.in_features  # 512 for ResNet18
-        
-        # Remove fc layer - use Identity instead of None
+        # Get feature dimension and remove fc heads for feature extraction
+        feature_dim = self.model_image.fc.in_features
         self.model_image.fc = nn.Identity()
         self.model_flow.fc = nn.Identity()
 
-        # New classifier that takes concatenated features
+        # Fusion classifier
         self.fc = nn.Linear(feature_dim * 2, num_classes)
 
-
-    def forward(self, x):
-        assert (
-            len(x.shape) == 4
-        ), "x must be a 4D tensor: [batch, channels, height, width]"
-
-        image = x[:, :3, :, :]  # [B, 3, H, W]
-        flow = x[:, 3:, :, :]    # [B, 2, H, W]
+    def forward(self, inputs):
+        # inputs is a tuple: (rgb_frame [B,3,H,W], flow_stack [B,2*(T-1),H,W])
+        image, flow_stack = inputs
         feat_image = self.model_image(image)
-        feat_flow = self.model_flow(flow)
+        feat_flow = self.model_flow(flow_stack)
         fused = torch.cat([feat_image, feat_flow], dim=1)
         return self.fc(fused)
 
@@ -171,7 +168,10 @@ class ActionRecognitionModel(pl.LightningModule):
         elif self.hparams["model_type"] == "CNN3D":
             return CNN3D(num_classes=self.hparams["num_classes"])
         elif self.hparams["model_type"] == "flow_resnet":
-            return FlowResNet18(num_classes=self.hparams["num_classes"])
+            return FlowResNet18(
+                num_classes=self.hparams["num_classes"],
+                num_frames=self.hparams["num_frames"],
+            )
         else:
             raise ValueError(f"Unknown model_type: {self.hparams['model_type']}")
 
@@ -243,7 +243,13 @@ class ActionRecognitionModel(pl.LightningModule):
 
 # create main function to test all models
 def main():
-    for model_type in ["single_frame", "early_fusion", "late_fusion", "CNN3D", "flow_resnet"]:
+    for model_type in [
+        "single_frame",
+        "early_fusion",
+        "late_fusion",
+        "CNN3D",
+        "flow_resnet",
+    ]:
         model = ActionRecognitionModel(
             model_type=model_type,
             num_classes=10,
@@ -258,9 +264,11 @@ def main():
         elif model_type == "CNN3D":
             x = torch.randn(1, 3, 10, 112, 112)
         elif model_type == "flow_resnet":
-            x = torch.randn(1, 5, 112, 112)
-        model.forward(x)
-        print(model.forward(x).shape)
+            rgb = torch.randn(1, 3, 112, 112)
+            flow = torch.randn(1, 2 * (10 - 1), 112, 112)
+            x = (rgb, flow)
+        y = model.forward(x)
+        print(y.shape)
 
 
 if __name__ == "__main__":

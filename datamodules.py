@@ -87,25 +87,26 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
             self.val_dataset.n_sampled_frames = self.n_sampled_frames
             self.test_dataset.n_sampled_frames = self.n_sampled_frames
         elif self.dataset_type == "frame_video_flow":
+            # Dual-stream: one RGB frame + stacked optical flows
             self.train_dataset = FrameVideoFlowDataset(
                 root_dir=self.root_dir,
                 split="train",
-                transform=train_transform,
-                stack_frames=self.stack_frames,
+                image_transform=train_transform,
+                image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
             )
             self.val_dataset = FrameVideoFlowDataset(
                 root_dir=self.root_dir,
                 split="val",
-                transform=val_transform,
-                stack_frames=self.stack_frames,
+                image_transform=val_transform,
+                image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
             )
             self.test_dataset = FrameVideoFlowDataset(
                 root_dir=self.root_dir,
                 split="test",
-                transform=val_transform,
-                stack_frames=self.stack_frames,
+                image_transform=val_transform,
+                image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
             )
 

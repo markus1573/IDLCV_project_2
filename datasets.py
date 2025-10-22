@@ -96,71 +96,95 @@ class FrameVideoDataset(torch.utils.data.Dataset):
 
         return frames
 
+
 class FrameVideoFlowDataset(torch.utils.data.Dataset):
     def __init__(
         self,
-        root_dir="data/ufc10",
+        root_dir="data/ucf101_noleakage",
         split="train",
-        transform=None,
-        stack_frames=True,
+        image_transform=None,
+        image_size=(112, 112),
         n_sampled_frames=10,
     ):
-        self.rgb_paths = sorted(glob(f"{root_dir}/frames/{split}/*/*/*.png"))
-        self.flow_root = root_dir.replace("frames", "flows")
-        self.df = pd.read_csv(f"{root_dir}/metadata/{split}.csv")
+        # Metadata lists all videos for the split
+        self.df = pd.read_csv(os.path.join(root_dir, "metadata", f"{split}.csv"))
+        self.root_dir = root_dir
         self.split = split
-        self.transform = transform
-        self.stack_frames = stack_frames
+        self.image_transform = image_transform
+        self.image_size = image_size
         self.n_sampled_frames = n_sampled_frames
 
     def __len__(self):
-        return len(self.rgb_paths)
-
-    def _get_meta(self, attr, value):
-        return self.df.loc[self.df[attr] == value]
+        return len(self.df)
 
     def __getitem__(self, idx):
-        rgb_frame_path = self.rgb_paths[idx]
-        rgb_frame_path = rgb_frame_path.replace("\\", "/")
-        video_name = rgb_frame_path.split("/")[-2]
-        video_meta = self._get_meta("video_name", video_name)
-        label = video_meta["label"].item()
+        row = self.df.iloc[idx]
+        video_name = row["video_name"]
+        action = row["action"]
+        label = int(row["label"])
 
-        # Derive frame directory and load both RGB and Flow
-        video_frames_dir = rgb_frame_path.split("frame_")[0]
-        rgb_frames = self.load_frames(video_frames_dir, mode="frames")
-        flow_frames = self.load_frames(video_frames_dir.replace("frames", "flows"), mode="flows")
+        # Directories
+        frames_dir = os.path.join(
+            self.root_dir, "frames", self.split, action, video_name
+        )
+        flows_dir = os.path.join(self.root_dir, "flows", self.split, action, video_name)
 
-        if self.transform:
-            rgb_frames = [self.transform(f) for f in rgb_frames]
-            flow_frames = [self.transform(f) for f in flow_frames]
+        # Select a single RGB frame (center frame by default)
+        center_index = (self.n_sampled_frames + 1) // 2
+        rgb_path = os.path.join(frames_dir, f"frame_{center_index}.jpg")
+        if not os.path.exists(rgb_path):
+            # Fall back to png if present
+            rgb_path = os.path.join(frames_dir, f"frame_{center_index}.png")
+
+        image = Image.open(rgb_path).convert("RGB")
+        if self.image_transform is not None:
+            image_tensor = self.image_transform(image)
         else:
-            rgb_frames = [T.ToTensor()(f) for f in rgb_frames]
-            flow_frames = [T.ToTensor()(f) for f in flow_frames]
+            image_tensor = T.Compose([T.Resize(self.image_size), T.ToTensor()])(image)
 
-        # Stack frames
-        if self.stack_frames:
-            rgb_tensor = torch.stack(rgb_frames).permute(1, 0, 2, 3)   # [3, T, H, W]
-            flow_tensor = torch.stack(flow_frames).permute(1, 0, 2, 3) # [2, T, H, W]
-            combined = torch.cat([rgb_tensor, flow_tensor], dim=0)     # [5, T, H, W]
-        else:
-            combined = list(zip(rgb_frames, flow_frames))
+        # Stack all optical flows between successive frames using .npy files
+        import numpy as np
+        import torch.nn.functional as F
 
-        return combined, label
+        flow_tensors = []
+        for i in range(1, self.n_sampled_frames):
+            flow_path_npy = os.path.join(flows_dir, f"flow_{i}_{i+1}.npy")
+            if not os.path.exists(flow_path_npy):
+                raise FileNotFoundError(f"Missing flow: {flow_path_npy}")
 
-    def load_frames(self, frames_dir, mode="frames"):
-        frames = []
-        for i in range(1, self.n_sampled_frames + 1):
-            frame_file = os.path.join(frames_dir, f"frame_{i}.png") if mode == "frames" else os.path.join(frames_dir, f"flow_{i}.png")
-            if os.path.exists(frame_file):
-                frame = Image.open(frame_file).convert("RGB")
-                frames.append(frame)
+            flow = np.load(flow_path_npy)
+            # Ensure channel-first [2, H, W]
+            if flow.ndim == 3 and flow.shape[0] in (2, 3):
+                chw = flow
+            elif flow.ndim == 3 and flow.shape[-1] in (2, 3):
+                chw = np.transpose(flow, (2, 0, 1))
             else:
-                if frames:
-                    frames.append(frames[-1])  # duplicate last frame
-                else:
-                    raise FileNotFoundError(f"No {mode} frames found in {frames_dir}")
-        return frames
+                raise ValueError(
+                    f"Unexpected flow shape {flow.shape} at {flow_path_npy}"
+                )
+            flow = torch.from_numpy(chw).float()  # [2, H, W]
+            # Robust resize via interpolate on 4D tensor to avoid channel mishandling
+            flow = F.interpolate(
+                flow.unsqueeze(0),
+                size=self.image_size,
+                mode="bilinear",
+                align_corners=False,
+            ).squeeze(0)
+            flow_tensors.append(flow)
+
+        # Concatenate along channel dimension -> [2*(T-1), H, W]
+        flow_stack = torch.cat(flow_tensors, dim=0).contiguous()
+
+        # Sanity checks
+        expected_c = 2 * (self.n_sampled_frames - 1)
+        assert (
+            flow_stack.shape[0] == expected_c
+        ), f"Flow stack channels {flow_stack.shape[0]} != expected {expected_c}"
+        assert (
+            flow_stack.shape[1:] == image_tensor.shape[1:]
+        ), f"Flow size {flow_stack.shape[1:]} must match image size {image_tensor.shape[1:]}"
+
+        return (image_tensor, flow_stack), label
 
 
 if __name__ == "__main__":
