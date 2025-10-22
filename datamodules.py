@@ -1,7 +1,19 @@
 import pytorch_lightning as pl
+import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
 from datasets import FrameImageDataset, FrameVideoDataset, FrameVideoFlowDataset
+
+
+def seed_worker_fn(worker_id: int):
+    """Deterministic worker seeding; must be top-level for Windows pickling."""
+    import numpy as _np
+    import random as _random
+
+    seed = torch.initial_seed() % (2**32)
+    _np.random.seed(seed)
+    _random.seed(seed)
+    torch.manual_seed(seed)
 
 
 class ActionRecognitionDataModule(pl.LightningDataModule):
@@ -29,6 +41,7 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
         n_sampled_frames: int = 10,
         stack_frames: bool = True,
         augment: bool = True,
+        seed: int = 42,
     ):
         super().__init__()
         self.root_dir = root_dir
@@ -39,6 +52,7 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
         self.n_sampled_frames = n_sampled_frames
         self.stack_frames = stack_frames
         self.augment = augment
+        self.seed = seed
 
         # Save hyperparameters
         self.save_hyperparameters()
@@ -94,6 +108,7 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
                 image_transform=train_transform,
                 image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
+                seed=self.seed,
             )
             self.val_dataset = FrameVideoFlowDataset(
                 root_dir=self.root_dir,
@@ -101,6 +116,7 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
                 image_transform=val_transform,
                 image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
+                seed=self.seed,
             )
             self.test_dataset = FrameVideoFlowDataset(
                 root_dir=self.root_dir,
@@ -108,6 +124,7 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
                 image_transform=val_transform,
                 image_size=self.image_size,
                 n_sampled_frames=self.n_sampled_frames,
+                seed=self.seed,
             )
 
         else:
@@ -138,34 +155,46 @@ class ActionRecognitionDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         """Return training dataloader."""
+        generator = torch.Generator()
+        generator.manual_seed(self.seed)
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.num_workers,
             pin_memory=True,
+            worker_init_fn=seed_worker_fn,
+            generator=generator,
             persistent_workers=True if self.num_workers > 0 else False,
         )
 
     def val_dataloader(self):
         """Return validation dataloader."""
+        generator = torch.Generator()
+        generator.manual_seed(self.seed)
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=True,
+            worker_init_fn=seed_worker_fn,
+            generator=generator,
             persistent_workers=True if self.num_workers > 0 else False,
         )
 
     def test_dataloader(self):
         """Return test dataloader."""
+        generator = torch.Generator()
+        generator.manual_seed(self.seed)
         return DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             pin_memory=True,
+            worker_init_fn=seed_worker_fn,
+            generator=generator,
             persistent_workers=True if self.num_workers > 0 else False,
         )
 

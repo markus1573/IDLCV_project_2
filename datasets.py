@@ -109,6 +109,7 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
         image_transform=None,
         image_size=(112, 112),
         n_sampled_frames=10,
+        seed: int = 42,
     ):
         # Metadata lists all videos for the split
         self.df = pd.read_csv(os.path.join(root_dir, "metadata", f"{split}.csv"))
@@ -117,6 +118,7 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
         self.image_transform = image_transform
         self.image_size = image_size
         self.n_sampled_frames = n_sampled_frames
+        self.seed = seed
 
     def __len__(self):
         return len(self.df)
