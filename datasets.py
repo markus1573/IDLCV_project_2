@@ -105,7 +105,7 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
         stack_frames=True,
         n_sampled_frames=10,
     ):
-        self.rgb_paths = sorted(glob(f"{root_dir}/frames/{split}/*/*/*.jpg"))
+        self.rgb_paths = sorted(glob(f"{root_dir}/frames/{split}/*/*/*.png"))
         self.flow_root = root_dir.replace("frames", "flows")
         self.df = pd.read_csv(f"{root_dir}/metadata/{split}.csv")
         self.split = split
@@ -151,7 +151,7 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
     def load_frames(self, frames_dir, mode="frames"):
         frames = []
         for i in range(1, self.n_sampled_frames + 1):
-            frame_file = os.path.join(frames_dir, f"frame_{i}.jpg") if mode == "frames" else os.path.join(frames_dir, f"flow_{i}.jpg")
+            frame_file = os.path.join(frames_dir, f"frame_{i}.png") if mode == "frames" else os.path.join(frames_dir, f"flow_{i}.png")
             if os.path.exists(frame_file):
                 frame = Image.open(frame_file).convert("RGB")
                 frames.append(frame)
