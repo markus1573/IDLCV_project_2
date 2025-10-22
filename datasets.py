@@ -5,6 +5,9 @@ from PIL import Image
 import torch
 from torchvision import transforms as T
 import numpy as np
+# Stack all optical flows between successive frames using .npy files
+import numpy as np
+import torch.nn.functional as F
 
 
 class FrameImageDataset(torch.utils.data.Dataset):
@@ -143,9 +146,6 @@ class FrameVideoFlowDataset(torch.utils.data.Dataset):
         else:
             image_tensor = T.Compose([T.Resize(self.image_size), T.ToTensor()])(image)
 
-        # Stack all optical flows between successive frames using .npy files
-        import numpy as np
-        import torch.nn.functional as F
 
         flow_tensors = []
         for i in range(1, self.n_sampled_frames):

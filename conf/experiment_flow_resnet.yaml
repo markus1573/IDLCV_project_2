@@ -27,4 +27,9 @@ training:
 
 logging:
   experiment_name: flowresnet
-  wandb: null
+  wandb:
+    project: "action-recognition"
+    entity: null
+    tags: ["flow", "dual_stream"]
+    notes: "FlowResNet18 dual-stream with 1 RGB + stacked flows"
+    offline: false
